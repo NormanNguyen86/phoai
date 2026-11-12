@@ -46,6 +46,7 @@ phoai/
 ├── CLAUDE.md               # project memory for Claude Code (section 9)
 ├── README.md               # problem, architecture, how to run, results, demo link
 ├── CHANGELOG.md
+├── LICENSE                 # MIT
 ├── pyproject.toml          # dependencies + project version (managed with uv)
 ├── .env.example            # variable names only, never real values
 ├── .gitignore              # .env, data/raw/, runs/, cache/, __pycache__/
@@ -74,7 +75,9 @@ phoai/
 ├── notebooks/              # experiments, kept out of src/
 ├── docs/
 │   ├── PROJECT_MANAGEMENT.md   # this file
-│   ├── spec-v0.1.md, schema.md, annotation-guide.md
+│   ├── STATUS.md           # current version, DoD progress, next tasks
+│   ├── spec-versions/      # spec-vX.Y.md per version + _template.md
+│   ├── schema.md, annotation-guide.md
 │   ├── failure-cases.md, failure-taxonomy.md
 │   ├── devlog.md           # one short entry per week
 │   ├── adr/                # architecture decision records
@@ -86,7 +89,7 @@ phoai/
 │   └── pull_request_template.md
 └── .claude/
     ├── settings.json       # permissions for Claude Code
-    └── skills/             # project skills (section 9.4)
+    └── skills/             # Claude Code skills (section 9.4)
 ```
 
 ## 4. Git workflow
@@ -241,12 +244,22 @@ Treat Claude as a very fast colleague who forgets everything between sessions. T
 
 ### 9.1 Two places to work
 
-| Where | Used for | Memory |
+| Where | Used for | Reads |
 |---|---|---|
-| Claude (claude.ai / desktop), project workspace | Planning, proposal review, research, writing docs | Project documents + project memory |
-| Claude Code, inside the repo | Writing code, running tests, reading errors, reviewing diffs | `CLAUDE.md` + auto memory + skills |
+| Claude Project (claude.ai) — **plan, gate, concepts** | Status and next tasks, PR review before merge, version transitions, technology Q&A | The public repo (cloned each session) + `project-brief.md` |
+| Claude Code, inside the repo — **while coding** | Session start, explaining code, debugging hints, pre-commit checks | `CLAUDE.md`, `docs/STATUS.md`, the working tree |
 
-Major decisions are discussed in the first place and **recorded in `docs/adr/` or `docs/devlog.md`**, so the repository stays the single source of truth.
+Chat sessions in the Claude Project:
+
+| Session | When | How |
+|---|---|---|
+| Status | Start of each work week / after a few blocks | skill `phoai-status` |
+| PR review | Before merging a PR | skill `phoai-review` |
+| Version | Closing a version and planning the next | skill `phoai-version` |
+| Tech Q&A | Understanding a tool or concept in the current spec | Q&A frame in project instructions |
+
+`docs/STATUS.md` is the shared dashboard: written for humans first, read by both Claude surfaces.
+Major decisions are **recorded in `docs/adr/` or `docs/devlog.md`**, so the repository stays the single source of truth.
 
 ### 9.2 Context and tokens
 - The **context window** holds everything Claude can currently see: CLAUDE.md, files read, the whole conversation, command output.
@@ -284,12 +297,16 @@ Project rules:
 - Write the `description` as "use when …": it decides when Claude picks the skill.
 - Create a skill when a procedure has been repeated twice.
 
-| Skill | Does | Create when |
-|---|---|---|
-| `/release-check` | Runs the section 5.2 checklist and reports gaps | first release after v0.1 |
-| `/run-eval` | Runs evaluation on the latest run, compares with baseline, drafts the report | first evaluation |
-| `/explain-module` | Explains a module: data flow, inputs/outputs, three self-check questions | early |
-| `/devlog` | Summarises a session into 3–5 lines for `docs/devlog.md` | early |
+Claude Code skills in this repo (`.claude/skills/`):
+
+| Skill | Does |
+|---|---|
+| `/start` | Opens a session for one task: reads STATUS, restates the task, asks for your plan first |
+| `/explain` | Explains existing code: purpose, data flow, trade-offs, 3 self-check questions (read-only) |
+| `/stuck` | Debugging coach: judges your hypothesis, gives hints in increasing strength |
+| `/check` | Pre-commit check: lint, tests, conventions, scope, proposed commit split (read-only) |
+
+Planned later: `/release-check` (section 10.2) at the first release, `/run-eval` at v0.2.
 
 ### 9.5 Permissions and guardrails
 `.claude/settings.json`:
@@ -297,11 +314,12 @@ Project rules:
 {
   "permissions": {
     "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./data/raw/**)"],
-    "ask":  ["Bash(git push:*)", "Bash(git tag:*)"]
+    "ask":  ["Bash(git push:*)", "Bash(git tag:*)",
+            "Edit(./src/**)", "Edit(./evals/**)", "Edit(./prompts/**)"]
   }
 }
 ```
-- Claude cannot read `.env` or raw images, and must ask before pushing or tagging.
+- Claude cannot read `.env` or raw images, must ask before pushing or tagging, and must ask before editing core code.
 - Rules that must never be broken (e.g. never commit `.env`) belong in a **hook** (PreToolUse), because CLAUDE.md is guidance, not enforcement.
 - From v0.5, a hook can run `ruff format` after Claude edits Python files.
 
@@ -327,46 +345,7 @@ Project rules:
 ## 10. Templates
 
 ### 10.1 `CLAUDE.md`
-```markdown
-# PhoAI — AI Photography Tutor
-
-## Goal
-Critique photos for beginners; every comment is grounded in visible evidence
-(Observation -> Evidence -> Why -> What to try).
-
-## Current status  (update weekly)
-- Working on: v0.1 — see the GitHub milestone
-- Prompt: prompts/critique_v2.md · model: see config/default.yaml
-
-## Commands
-- Install: `uv sync`
-- Run: `uv run python -m phoai.pipeline <image>`
-- Test: `uv run pytest -m "not slow"`
-- Eval: `uv run python -m evals.run --run runs/<run_id>`
-- Format: `uv run ruff format . && uv run ruff check .`
-
-## Conventions
-- Python 3.12, type hints, pydantic for all data going to/from the model
-- Prompts live in prompts/, never hard-coded
-- Every output stores prompt_version, model_id, schema_version, git_sha
-- Tests never call the real API — use fixtures in tests/fixtures/
-- Conventional Commits; never push or tag on your own
-
-## Working with me
-- Core modules (schema, critique, grounding, evals) are written by me;
-  you review and explain. Do not rewrite whole files when I ask a question.
-- Before changing more than 2 files: propose a plan and wait.
-- When fixing a bug: state the root cause in one sentence.
-
-## Never
-- Read or print .env
-- Commit data/raw/, runs/, cache/
-- Add a dependency without asking
-
-## Docs
-- Spec: @docs/spec-v0.1.md · Schema: @docs/schema.md
-- Decisions: docs/adr/ · Log: docs/devlog.md
-```
+See the live [CLAUDE.md](../CLAUDE.md) at the repo root; keep it under ~150 lines.
 
 ### 10.2 `.claude/skills/release-check/SKILL.md`
 ```markdown
@@ -436,11 +415,11 @@ description: Check the PhoAI release checklist before tagging. Use when asked to
 ## 11. Management cadence
 
 **Every work block**
-- Start: open the issue, create/switch branch, start a fresh Claude session (`/clear`).
+- Start: open the issue, create/switch branch, fresh Claude Code session (`/clear`, then `/start`).
 - End: commit, push, move the Kanban card, write down the next first step.
 
 **Weekly (about 10 minutes)**
-- Write the week's `docs/devlog.md` entry and update "Current status" in CLAUDE.md.
+- Run a `phoai-status` session: it drafts the `docs/STATUS.md` update and the `docs/devlog.md` entry.
 - Review the milestone: close finished issues; move late ones (with a reason) or drop them.
 - Check the week's API spend.
 - Review CLAUDE.md and auto memory (`/memory`): add new rules, remove stale notes.
