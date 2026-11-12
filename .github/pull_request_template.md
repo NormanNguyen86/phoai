@@ -1,12 +1,13 @@
-## Làm gì
-<!-- 1–3 dòng. Liên kết issue: Fixes #... -->
+## What
+<!-- 1–3 lines. Link the issue: Fixes #... -->
 
-## Kiểm tra
-- [ ] Đã đọc toàn bộ diff
-- [ ] Test qua (`pytest -m "not slow"`)
-- [ ] Nếu đổi prompt/model: đã chạy eval, kết quả trong evals/reports/
-- [ ] Không có secret / dữ liệu thô trong diff
-- [ ] Tôi giải thích được mọi dòng thay đổi
+## Checks
+- [ ] I read the whole diff
+- [ ] Tests pass (`uv run pytest -m "not slow"`)
+- [ ] If prompt/model changed: evaluation run, results in `evals/reports/`
+- [ ] No secrets or raw data in the diff
+- [ ] `docs/STATUS.md` updated if a DoD item changed
+- [ ] I can explain every changed line
 
-## Claude hỗ trợ phần nào
-<!-- ví dụ: viết test mẫu, review; phần lõi tự viết -->
+## AI assistance
+<!-- e.g. Claude reviewed and explained; core logic written by me -->
