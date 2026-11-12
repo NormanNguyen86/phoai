@@ -1,6 +1,12 @@
 {
   "permissions": {
     "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./data/raw/**)"],
-    "ask":  ["Bash(git push:*)", "Bash(git tag:*)"]
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git tag:*)",
+      "Edit(./src/**)",
+      "Edit(./evals/**)",
+      "Edit(./prompts/**)"
+    ]
   }
 }
