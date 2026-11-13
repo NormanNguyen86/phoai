@@ -3,8 +3,8 @@
 **Frozen:** 2026-11-12 · **Due:** 2026-11-22 · **Milestone:** v0.1
 
 ## Goal
-Given a photo, produce a structured critique for novice photographers
-(Observation → Evidence → Why → What to try) as validated JSON.
+A user can run one command on a photo and get a structured critique for novice photographers
+(Observation → Evidence → Why → What to try) as schema-validated JSON.
 
 ## In scope
 - CLI: `uv run python -m phoai.pipeline <image>` → print and save JSON
@@ -19,10 +19,11 @@ Given a photo, produce a structured critique for novice photographers
 - Caching, cost limits, Docker, CI
 
 ## Tech introduced in this version
-Each row needs an ADR in `docs/adr/` before v0.1.0 is tagged. The alternatives are
+For each: why it is here, the main alternative, and the ADR that records the choice.
+Each ADR goes in `docs/adr/` before `v0.1.0` is tagged; the alternatives listed are
 starting points for the decision, not the answer.
 
-| Tech | Role in PhoAI | Alternatives to compare | ADR |
+| Tech | Role in PhoAI | Alternative considered | ADR |
 |---|---|---|---|
 | uv + `pyproject.toml` | Dependencies, lock file, virtual env, `uv run` | pip + venv + requirements.txt, Poetry | 0001 |
 | pydantic | `Critique` schema: validate model output, version the data contract | dataclasses + manual checks, JSON Schema | to write |
@@ -31,9 +32,9 @@ starting points for the decision, not the answer.
 | pytest + fixtures (mocked API) | Test parsing/validation without cost or network | live API tests only | — |
 
 ## JD skills this version proves
-Rows from [jd-analysis.md](../jd-analysis.md).
+Rows from [jd-analysis.md](../jd-analysis.md) and the evidence that will exist when done.
 
-| Row | Skill | Evidence when done |
+| Row | Skill | Evidence (file / PR / report) |
 |---|---|---|
 | 1 | Clean Python packaging (uv, type hints) | `pyproject.toml`, `src/phoai/` |
 | 2 | Git workflow, SemVer tag | PR history, tag `v0.1.0` |
@@ -52,6 +53,6 @@ Rows from [jd-analysis.md](../jd-analysis.md).
 - [ ] Every output records `prompt_version`, `model_id`, `schema_version`
 - [ ] Unit tests pass without calling the real API (fixtures in `tests/fixtures/`)
 - [ ] No secrets, raw images or `runs/` committed
-- [ ] README explains how to run v0.1
+- [ ] README updated (how to run v0.1, results on the 5 test photos)
 - [ ] ADRs written for every row in "Tech introduced"
 - [ ] Tagged `v0.1.0` with a GitHub Release
