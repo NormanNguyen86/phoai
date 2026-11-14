@@ -9,4 +9,4 @@ One short file per decision: tool choices (uv, pydantic, model provider), design
 
 | # | Decision | Status |
 |---|---|---|
-| 0001 | _(to write: package and environment manager)_ | |
+| 0001 | [Use uv for package and environment management](0001-use-uv.md) | accepted |

@@ -63,8 +63,7 @@ This repo is also a record of how the project is run:
 - [JD analysis](docs/jd-analysis.md) — which AI Engineer skills each version demonstrates
 
 ## Tech stack
-
-Python 3.12 · uv · pydantic · pytest · ruff — more added per version (see specs).
+Python 3.13 · uv · pydantic · pytest · ruff — more added per version (see specs).
 
 ## Author
 
