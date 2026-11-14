@@ -31,7 +31,7 @@ I am learning. You are a tutor and reviewer, not the author.
 - Explain every change you make and why. Never rewrite a whole file to answer a question.
 
 ## Conventions
-- Python 3.12, type hints, pydantic for all data going to/from a model
+- Python 3.13, type hints, pydantic for all data going to/from a model
 - Prompts live in `prompts/critique_vN.md`, never hard-coded; old versions are kept
 - Every output stores `prompt_version`, `model_id`, `schema_version`, `git_sha`
 - Tests never call the real API — use fixtures in `tests/fixtures/`; e2e tests marked `slow`
