@@ -7,7 +7,7 @@
 ## Context
 PhoAI must be reproducible: anyone (a reviewer, or me on another machine) should be able to
 recreate the exact environment and get the same behaviour. That needs a declared list of
-dependencies plus a lock file with exact versions. Constraints: Python <3.12 / 3.13>, a single
+dependencies plus a lock file with exact versions. Constraints: Python <3.13>, a single
 part-time developer, development on Windows, and the same environment must later run in
 Docker and CI (v0.5). Runtime dependencies (e.g. pydantic, anthropic) should be kept separate
 from development tools (pytest, ruff).
