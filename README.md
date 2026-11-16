@@ -45,7 +45,7 @@ photo ──► MLLM (versioned prompt) ──► JSON critique (pydantic schema
 ```bash
 uv sync                                   # install dependencies (https://docs.astral.sh/uv/)
 cp .env.example .env                      # add your API key
-uv run python -m phoai.pipeline photo.jpg # critique one photo
+uv run phoai photo.jpg                    # critique one photo
 uv run pytest -m "not slow"               # tests (no real API calls)
 ```
 
