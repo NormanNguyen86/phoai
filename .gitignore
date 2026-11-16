@@ -1,4 +1,4 @@
-# ===== PhoAI — không commit =====
+# ===== PhoAI — do not commit =====
 .env
 .env.*
 !.env.example
@@ -13,7 +13,7 @@ cache/
 *.ckpt
 models/weights/
 
-# ===== Python (GitHub template, rút gọn) =====
+# ===== Python (GitHub template, trimmed) =====
 __pycache__/
 *.py[cod]
 *$py.class
