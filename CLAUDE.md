@@ -13,7 +13,7 @@ the product must run AND the author must understand every module and decision.
 
 ## Commands (once pyproject exists)
 - Install: `uv sync`
-- Run: `uv run python -m phoai.pipeline <image>`
+- Run: `uv run phoai <image>`
 - Test: `uv run pytest -m "not slow"`
 - Lint/format: `uv run ruff format . && uv run ruff check .`
 - Eval (from v0.2): `uv run python -m evals.run --run runs/<run_id>`
