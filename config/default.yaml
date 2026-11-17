@@ -1,0 +1,7 @@
+model_id: claude-sonnet-5-5 # Why: pinned full ID (no alias), so reproducible runs are possible
+max_tokens: 2000 # Why: temporary output ceiling; measure usage.output_tokens on the 5 photos, then set ~2x the max
+
+max_validation_retries: 3 # Why: max 3 retries after the first failed request aplied for JSON/Schema validation errors, not for network errors (which are retried by the client library)
+
+prompt_path: prompts/critique_v1.md  # Why: prompt versioned in a file, not hard-coded
+runs_dir: runs

@@ -10,3 +10,4 @@ One short file per decision: tool choices (uv, pydantic, model provider), design
 | # | Decision | Status |
 |---|---|---|
 | 0001 | [Use uv for package and environment management](0001-use-uv.md) | accepted |
+| 0002 | [Use YAML config with secrets in .env](0002-yaml-config-with-env-secrets.md) | accepted |
