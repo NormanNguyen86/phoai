@@ -17,8 +17,8 @@ The schema has its own version, `schema_version`, independent of the project rel
 | intent | object | 1 | First field: the intent the model assumes for the photo, and how confident it is in that assumption. Everything after it is judged against this intent. |
 | analysis_limits | list of text | 2 | Second field: the reasons why parts of the analysis may be unreliable (for example low resolution). It comes before the analysis so that the labels and confidences that follow can take these limits into account. |
 | dimensions | object | 3 | Third field: the diagnosis of the photo on five fixed dimensions, so that the model examines each one before giving advice. |
-| priority_problems | list | 4 | Fourth field: the one or two most important problems to work on, written after the diagnosis so that the advice follows from it. |
-| strengths | list | 5 | Fifth field: what the student should keep doing. It follows the problems, in the same order as the steps in the prompt (diagnose, advise, then list what to keep). |
+| strengths | list | 4 | Fourth field: what the student should keep doing. It comes before the weaknesses so that the learner feels encouraged first. |
+| priority_problems | list | 5 | Fifth field: the one or two most important problems to work on, written after the diagnosis so that the advice follows from it. |
 | overall_summary | text | 6 | Last field: one sentence summarizing the photo and the single most important thing to work on. |
 
 ## Field reference
@@ -30,11 +30,10 @@ The schema has its own version, `schema_version`, independent of the project rel
 | field | type | allowed values | required | meaning |
 |---|---|---|---|---|
 | intent | `Intent` object | see "Intent" | yes | The intent the model assumes for the photo, and its confidence in that assumption. |
-| analysis_limits | list of text | free text, one reason per item | yes | Reasons why parts of the analysis may be unreliable (for example "the image is too small to judge sharpness"). Always present; an empty list `[]` when there are none. |
+| analysis_limits | list of text | free text, one reason per item | no | Reasons why parts of the analysis may be unreliable (for example "the image is too small to judge sharpness"). An empty list when there are none. |
 | dimensions | `Dimensions` object | exactly five keys, see "Dimensions" | yes | The diagnosis of the photo on five dimensions. |
-| strengths | list of `Strength` | 0–2 items | yes | What the student should keep doing. May be empty. |
+| strengths | list of `Strength` | 1–2 items | yes | What the student should keep doing. |
 | priority_problems | list of `PriorityProblem` | 0–2 items, see invariants 3 and 4 | yes | The most important problems to work on. |
-| strengths | list of `Strength` | 0–2 items | yes | What the student should keep doing. May be empty. |
 | overall_summary | text | one sentence | yes | A summary of the photo and the single most important thing to work on. |
 
 ### Intent
@@ -64,6 +63,14 @@ The schema has its own version, `schema_version`, independent of the project rel
 | comment | text | free text | yes | The specific reason for the label. When the label is `not_assessable`, it says why. |
 | confidence | literal | `high`, `medium`, `low` | yes | How sure the model is about this rating. |
 
+### Strength
+
+| field | type | allowed values | required | meaning |
+|---|---|---|---|---|
+| dimension | literal | one of the five dimension keys | yes | The dimension this strength belongs to. |
+| observation | text | free text | yes | What is visible in the photo that works well. |
+| evidence | list of `Evidence` | at least 1 item | yes | Where in the photo it shows. |
+
 ### PriorityProblem
 
 | field | type | allowed values | required | meaning |
@@ -77,14 +84,6 @@ The schema has its own version, `schema_version`, independent of the project rel
 | why | text | free text | yes | The effect on the viewer, and why the alternative would work better. |
 | what_to_try | text | free text | yes | One concrete action for the next shoot. |
 
-### Strength
-
-| field | type | allowed values | required | meaning |
-|---|---|---|---|---|
-| dimension | literal | one of the five dimension keys | yes | The dimension this strength belongs to. |
-| observation | text | free text | yes | What is visible in the photo that works well. |
-| evidence | list of `Evidence` | at least 1 item | yes | Where in the photo it shows. |
-
 ## Invariants
 
 Rules that involve more than one field, or that go beyond the field types. "Code" means a validator in `schema.py` rejects the output. A rejected output is treated as invalid output and goes through the retry path.
@@ -94,9 +93,9 @@ Rules that involve more than one field, or that go beyond the field types. "Code
 | 1 | The `root_dimension` of a problem is rated `needs_work`, or `fine` when no dimension is `needs_work`. | Code, and stated in the prompt |
 | 2 | `related_dimensions` does not contain the `root_dimension`. | Code, and stated in the prompt |
 | 3 | `priority_problems` has at most 2 items. | Code, and stated in the prompt |
-| 4 | `priority_problems` has at least 1 item when a dimension is rated `needs_work`, and is empty when no dimension is rated `needs_work` or `fine`. When the worst rating is `fine`, it has 0–2 items. | Code, and stated in the prompt |
+| 4 | `priority_problems` is empty if and only if no dimension is rated `needs_work` or `fine`. A photo whose dimensions are all `good` or `not_assessable` therefore has an empty list. | Code, and stated in the prompt |
 | 5 | `rank` values are increasing and not duplicated. | Code, and stated in the prompt |
-| 6 | `strengths` has at most 2 items. It may be empty. | Code, and stated in the prompt |
+| 6 | `strengths` has 1–2 items. | Code, and stated in the prompt |
 | 7 | Every `evidence` list has at least 1 item, and every `description` is not empty. | Code |
 | 8 | `Critique` rejects unknown fields, so run metadata cannot appear in the model output. | Code (`extra="forbid"`) |
 | 9 | `schema_version`, `prompt_version`, `model_id` and `git_sha` are set by the pipeline, never by the model. | Code (pipeline) |
@@ -110,7 +109,7 @@ Every `evidence` field in the schema (in `strengths` and in `priority_problems`)
 | field | type | allowed values | required | meaning |
 |---|---|---|---|---|
 | zone | literal | one of the 11 values in the vocabulary below | yes | Where in the photo the observation applies. |
-| description | text | non-empty | yes | A short phrase naming what is visible in that zone (e.g. "the small boat on the water"). |
+| description | text | non-empty | yes | A short phrase naming what is visible in that zone (e.g. "the walker in a grey jacket"). |
 
 ### Zone vocabulary
 
@@ -126,7 +125,7 @@ Two special values sit outside the grid:
 
 | zone | use when |
 |---|---|
-| `global` | The observation applies to the whole image (for example flat light over the whole lake, or a color cast over the water and sky). |
+| `global` | The observation applies to the whole image (flat light, a color cast). |
 | `cannot_localize` | The observation is real but the model cannot tell where it is. The model must not guess a grid zone. |
 
 ### Rules
@@ -134,7 +133,7 @@ Two special values sit outside the grid:
 - An `evidence` list has at least one item.
 - One observation can list several zones: add one `Evidence` object per zone.
 - `zone` is validated against the vocabulary above. Any other value (`upper-left`, `middle-center`, `Center`) is rejected.
-- Zones refer to the image **as it was sent to the model**, after any preprocessing in the pipeline (for example an orientation fix). The same photo rotated gives different zones.
+- Zones refer to the image **as it was sent to the model**. The same photo rotated gives different zones. In v0.1.0 the input is a PNG already rotated upright by an offline script (see Known limitations); the pipeline does not rotate or check orientation.
 - A zone is a coarse hint for a beginner about where to look. It is not a coordinate, and in v0.1.0 nothing checks that the description matches what is really in that zone.
 
 ## Run metadata
@@ -165,74 +164,69 @@ Why the metadata is kept out of the model's output:
 
 ### Valid example
 
-A lake photo: a small rowing boat on a calm lake in morning light, hills on the far shore, and a shore line that slopes down toward the left. This is a `Critique`, not a `RunRecord`. The same example is used in `prompts/critique_v1.md`; when one copy changes, change the other.
+A street photo: a person in a grey jacket walks past a grey wall, with a patch of sunlight in the upper right. This is a `Critique`, not a `RunRecord`.
 
-    {
-      "intent": {
-        "summary": "You may have wanted to capture a calm, quiet morning on a lake, with a single boat as the focus.",
-        "confidence": "medium"
-      },
-      "analysis_limits": [],
-      "dimensions": {
-        "subject_story": {
-          "label": "good",
-          "comment": "A single small boat on an empty lake gives the photo a clear subject, and the eye goes to it first because it is the only man-made shape.",
-          "confidence": "high"
-        },
-        "composition": {
-          "label": "good",
-          "comment": "The boat sits left of center with open water in front of it, so it has room to move, and the far hills stay clear of it.",
-          "confidence": "medium"
-        },
-        "light_exposure": {
-          "label": "good",
-          "comment": "The soft, even morning light keeps detail in both the bright sky and the dark water, with no clipped highlights or crushed shadows.",
-          "confidence": "medium"
-        },
-        "color_tone": {
-          "label": "good",
-          "comment": "The cool blue-green palette is consistent across the water, hills and sky, which supports the calm mood.",
-          "confidence": "high"
-        },
-        "technical": {
-          "label": "needs_work",
-          "comment": "The far shore line slopes down toward the left, which is easy to see against the straight edges of the frame, although the boat itself is sharp.",
-          "confidence": "high"
-        }
-      },
-      "strengths": [
-        {
-          "dimension": "composition",
-          "observation": "The boat has open water ahead of it, which gives the scene a feeling of quiet space.",
-          "evidence": [
-            { "zone": "bottom-left", "description": "the small boat with open water in front of it" }
-          ]
-        },
-        {
-          "dimension": "color_tone",
-          "observation": "The blue-green palette is consistent from the water to the sky, so nothing distracts from the calm mood.",
-          "evidence": [
-            { "zone": "global", "description": "the cool blue-green tones across the whole frame" }
-          ]
-        }
-      ],
-      "priority_problems": [
-        {
-          "rank": 1,
-          "root_dimension": "technical",
-          "related_dimensions": [],
-          "title": "The horizon is tilted",
-          "observation": "The line where the far shore meets the water slopes down from the right side of the frame to the left side, while the calm water should sit flat.",
-          "evidence": [
-            { "zone": "middle-left", "description": "the far shore line, lower here" },
-            { "zone": "middle-right", "description": "the far shore line, higher here" }
-          ],
-          "why": "The eye expects a horizon to be level, so the tilt looks like a mistake and makes the calm scene feel as if it is sliding to one side. A level horizon lets the quiet mood come through.",
-          "what_to_try": "On your next lake shoot, turn on the camera's grid and line the far shore up with a horizontal grid line before pressing the shutter."
-        }
-      ],
-      "overall_summary": "A calm, well-balanced lake scene held back by a tilted horizon; next time, level the horizon before you shoot."
+```json
+{
+  "intent": {
+    "summary": "You may have wanted to capture a pedestrian moment in a city street, with the patch of sunlight adding atmosphere.",
+    "confidence": "medium"
+  },
+  "analysis_limits": [],
+  "dimensions": {
+    "subject_story": {
+      "label": "needs_work",
+      "comment": "The moment has potential, but the walker does not stand out, so the viewer's eye has no clear place to land first.",
+      "confidence": "high"
+    },
+    "composition": {
+      "label": "needs_work",
+      "comment": "The low camera angle gives a good sense of space, but the walker sits low in the frame, far from the bright area and against a wall of the same tone.",
+      "confidence": "medium"
+    },
+    "light_exposure": {
+      "label": "fine",
+      "comment": "The shaft of sunlight in the upper right is attractive and clearly directional, but it does not fall on the walker.",
+      "confidence": "high"
+    },
+    "color_tone": {
+      "label": "good",
+      "comment": "The warm greys of the wall and jacket are consistent and create a calm mood, with no color cast.",
+      "confidence": "medium"
+    },
+    "technical": {
+      "label": "good",
+      "comment": "The walker is sharp, and at this resolution there is no visible motion blur or significant noise.",
+      "confidence": "medium"
     }
+  },
+  "strengths": [
+    {
+      "dimension": "composition",
+      "observation": "The low angle makes the wall taller and the street wider, which gives the frame a strong sense of space.",
+      "evidence": [
+        { "zone": "global", "description": "the sense of space created by the low angle across the whole frame" }
+      ]
+    }
+  ],
+  "priority_problems": [
+    {
+      "rank": 1,
+      "root_dimension": "composition",
+      "related_dimensions": ["light_exposure", "subject_story"],
+      "title": "The subject blends into the background and is separated from the light",
+      "observation": "The walker, in a grey jacket, stands against an equally grey wall, low in the frame and far from the shaft of sunlight in the upper right.",
+      "evidence": [
+        { "zone": "bottom-center", "description": "the walker in a grey jacket" },
+        { "zone": "top-right", "description": "the brightest patch of sunlight in the image" }
+      ],
+      "why": "The brightest area pulls the viewer's eye to the upper right, where nothing important is happening, while the walker's jacket merges with the wall and cannot hold attention.",
+      "what_to_try": "Move so the patch of sunlight is behind the walker, then wait until they step into it before pressing the shutter."
+    }
+  ],
+  "overall_summary": "A good moment and atmosphere, but the viewer is not sure where to look; next time, prioritize getting your subject into the light."
+}
+```
 
 ### Invalid examples
 
@@ -242,14 +236,13 @@ Each case below breaks one rule. The fragment shows only the part that is wrong.
 |---|---|---|---|
 | 1 | `"label": "ok"` | Not one of `good`, `fine`, `needs_work`, `not_assessable`. | Literal type |
 | 2 | `"zone": "upper-left"` | Not in the zone vocabulary. | Literal type |
-| 3 | `"evidence": ["bottom-left: the small boat"]` | `evidence` items must be objects with `zone` and `description`, not strings. | Type check |
+| 3 | `"evidence": ["bottom-center: the walker"]` | `evidence` items must be objects with `zone` and `description`, not strings. | Type check |
 | 4 | `"root_dimension": "color_tone"` while `color_tone` is rated `good` | The root dimension of a problem must be rated `needs_work` (or `fine` only when no dimension is `needs_work`). | Validator |
 | 5 | `"root_dimension": "composition", "related_dimensions": ["composition"]` | `related_dimensions` must never contain the root dimension. | Validator |
 | 6 | `priority_problems` with 3 items | At most 2 problems. | Validator |
 | 7 | No dimension is `needs_work` or `fine` (for example all five `good`) and one item in `priority_problems` | The list must be empty when no dimension is `needs_work` or `fine`, because no valid root dimension exists. | Validator |
 | 8 | A top-level `"model_id": "..."` in `Critique` | Unknown field (`extra="forbid"`). Metadata belongs to `RunRecord`. | `extra="forbid"` |
-| 9 | One dimension is `needs_work` and `"priority_problems": []` | At least one problem is required when a dimension is `needs_work`. | Validator |
-| 10 | `analysis_limits` is missing from the object | The field is required. When there are no limits it must be written as `[]`. | Required field |
+| 9 | One dimension is `needs_work` and `"priority_problems": []` | At least one problem is required when a dimension is `needs_work` or `fine`. | Validator |
 
 ## Known limitations / Backlog
 
@@ -258,17 +251,16 @@ Limits of schema v0.1.0. None of them is hidden; each one has a place where it w
 **Not covered by the prompt or the schema**
 
 - Whether `global` or `cannot_localize` may appear together with grid zones in the same `evidence` list is not specified. The schema accepts any mix.
-- When the worst rating is `fine`, whether to list a problem is the model's judgement. The schema accepts both an empty list and 1–2 problems.
+- Image orientation is outside the schema and the pipeline in v0.1.0. The model input is an upright PNG made offline by `data/processed_raw/preprocess.py` (EXIF Orientation applied, metadata stripped). An image sent with an unapplied orientation would get zones on a rotated image, and nothing detects it. Auto-orienting arbitrary uploads is in the Backlog of `STATUS.md`.
 
 **Rules that exist only in the prompt**
 
 These are not machine-checked. The schema accepts a violation, and only review or later evaluation will notice it.
 
 - `comment` is 1–2 sentences.
-- `strengths` is empty only when nothing real can be praised (for example when no dimension can be assessed). The schema does not check why the list is empty.
 - `what_to_try` is one concrete action (at most two numbered steps).
 - A rule name appears at most once in `why`, and only in parentheses.
-- Advice may name a camera setting, but must not state its current value or say that it was wrong. Nothing checks this automatically; an eval check for phrases such as "your ISO is …" is planned for v0.2.
+- Advice may name a camera setting to change but must not state its current value.
 - All text is plain English addressed to the student.
 - The order `intent` and `dimensions` before `priority_problems` is an instruction for generation. Pydantic does not check the order of keys in the input, so a different order is still valid.
 
