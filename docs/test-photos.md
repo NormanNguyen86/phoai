@@ -2,9 +2,10 @@
 
 - Written: 2026-11-16 (labels assigned from EXIF and measurements on the images; the primary labels were confirmed by the author on the same day)
 - Photo author: Ngoc Manh, shot on a Canon EOS RP with an RF24-105mm F4-7.1 IS STM; full usage rights
-- Location: `data/test-photos.en.md` (text). The photos are in `data/raw/`, outside git.
-- No model output was seen when these labels were written.
-- This file only describes the photo set. How it is used and how it is judged may change later.
+- Location: `data/test-photos.md` (text). The photos are in `data/raw/`, outside git.
+- Revised: 2026-11-19. Added section 9 (expected output per dimension, aligned to the `prompts/critique_v1.md` prompt) and edited the `02a` ISO row in section 6. Sections 2–5 are unchanged. Section 9 was derived from sections 5–6 and is **not yet confirmed by the author**.
+- No model output was seen when these labels were written, or when section 9 was written.
+- Sections 1–8 only describe the photo set. Section 9 is tied to one prompt version (`prompts/critique_v1.md`, identified as `critique_v1` in run output); if the prompt's rules change, section 9 must be re-checked. How the set is used and judged may change later.
 
 ## 1. Scope and reproducibility
 
@@ -12,6 +13,7 @@
 - `data/raw/` holds 9 files. 5 are test inputs (see the "Role" column in section 3); the other 4 are same-scene references. `example_01b` was originally a test photo and has been moved to the references so the set has exactly 5 test photos, as the DoD requires. 01b was chosen because its label rests on an eyeballed estimate [EYE], which is weaker than the measured labels. Its label is still in section 6.
 - Evidence tags: **[EXIF]** read from metadata, **[MEASURED]** computed by code on the correctly rotated image (full 1620×1080 px), **[EYE]** estimated by eye on a 10% grid (error about ±0.02 of the frame).
 - Label convention: a **primary label** is a clear, measurable or author-confirmed finding. Subjective or unclear judgements were dropped. **Other measured observations** (section 6) are only there to see whether a model notices them unprompted; they are not counted as expected defects.
+- Defect labels (sections 2 and 6) are not the prompt's output. The prompt reports five dimensions (`subject_story`, `composition`, `light_exposure`, `color_tone`, `technical`) with a label for each. Section 9 maps the defect labels to that output; use section 9, not section 6, when scoring a model run.
 
 ## 2. Test set (5 photos)
 
@@ -116,6 +118,8 @@ Thresholds used to assign labels. **The thresholds were set after looking at the
 | `04` | `subject_in_shade_underexposed`; `shadow_crush` | −1.9 stop [MEASURED], confirmed by author; 28.9% ≤ 10 and right wall 64% [MEASURED] | High-contrast scene: sky is 6.3 stops above the right wall. Strengths: no significant clipping (0.65% ≥ 250); subject on the centre axis, matching the leading-line convergence point |
 | `05b` | `limited_look_room` | Space ahead 0.16 [EYE], vs 0.58 in `05a` | Exposure is fine (median L* 55.8; 0.03% ≥ 250). The traffic light was placed deliberately (confirmed by author) |
 
+Note: labels in the same row that share a root cause are one problem in the prompt's output (`02a`: `highlight_clipped_severe` and `subject_detail_loss`; `04`: `subject_in_shade_underexposed` and `shadow_crush`; both fall under Light & Exposure). The two labels of `03` have different causes and are two problems. See section 9.
+
 Reference photos:
 
 | Photo | Label | Basis |
@@ -129,7 +133,7 @@ Labels that need the shooting settings (EXIF) and cannot be inferred from the pi
 
 | Photo | Label | Basis | Condition for scoring |
 |---|---|---|---|
-| `02a` | `iso_too_high_for_light` | ISO 1000 (EV100 10.64) vs ISO 125 in `02b` (EV100 13.64), same 1/250, f/8: the image is 3 stops brighter because of the higher ISO [EXIF] | If the pipeline sends only the image, this label is unfair to the model. Score it only when the pipeline passes the shooting settings. Passing settings is not implemented yet; add it to the Backlog |
+| `02a` | `iso_too_high_for_light` | ISO 1000 (EV100 10.64) vs ISO 125 in `02b` (EV100 13.64), same 1/250, f/8: the image is 3 stops brighter because of the higher ISO [EXIF] | **Out of scope for v0.1, not scored.** The `critique_v1` prompt tells the model not to assume camera settings or EXIF, and v0.1 sends only the image, so this label cannot be checked from the output. Revisit only if a later version passes the shooting settings to the model; passing settings is not implemented yet (Backlog) |
 
 ## 7. Preprocessing required before use
 
@@ -150,3 +154,71 @@ Labels that need the shooting settings (EXIF) and cannot be inferred from the pi
 ## 8. Source of the measurements
 
 The measurements in section 5 were computed on 2026-11-16 with Python (Pillow 12.3.0, NumPy 2.5.3), run by Claude (an AI assistant) in a working session at the author's request. The script is not saved in the repo, so reproducing the numbers means re-implementing them from the conventions at the top of section 5. Subject bounding boxes are eyeballed estimates, not the result of automatic detection. If a photo is replaced, re-measure.
+
+Section 9 was written on 2026-11-19 by Claude at the author's request. It adds no new measurements: it re-expresses sections 5 and 6 in the prompt's output terms. Every entry that is not copied from those sections is a mapping decision and is marked as unconfirmed.
+
+## 9. Expected output per dimension (for `prompts/critique_v1.md`)
+
+Status: **proposed, not confirmed by the author.** No model output was seen. The thresholds behind the defect labels were chosen after looking at this set (section 6), so matching this table is not independent evidence of accuracy.
+
+### 9.1 Conventions
+
+- Dimension codes: `subject_story`, `composition`, `light_exposure`, `color_tone`, `technical`.
+- Expected label for each dimension:
+
+| Value | Meaning in this file |
+|---|---|
+| `needs_work` | The dimension has a primary label in section 6. The prompt's v0.1 output does not separate "present" from "severe", so both give `needs_work` |
+| `fine` | A weakness is documented in this file, but it is below the threshold or the author does not treat it as a defect |
+| `good` | A reference label says "ok", or this file records a strength and no weakness |
+| `unscored` | No ground truth (not measured, not labelled). Whatever the model says for this dimension is neither right nor wrong |
+
+- "`X` or `Y`" means either label is accepted.
+- **Root problem.** The prompt assigns each problem to one dimension: anything about brightness or lost tonal detail (clipped highlights, crushed shadows, too dark, too bright) is always `light_exposure`, whichever setting would fix it; otherwise the dimension whose fix solves it. Labels from section 6 that share a root cause are one problem.
+- **Evidence zones.** The prompt reports 3×3 grid zones on the upright image. Columns split at x = 1/3 and 2/3, rows at y = 1/3 and 2/3. The expected zone comes from the subject centre in section 5.3. If the point lies within 0.05 of a grid line, the adjacent zone is also accepted. `global` means the whole image. "Not mapped" means this file has no coordinates for it, so the evidence of that problem is not scored.
+- **Priority.** Where a photo has two expected problems, the author has not set an order; either order is accepted.
+
+### 9.2 Expected label per dimension
+
+| Photo | Role | `subject_story` | `composition` | `light_exposure` | `color_tone` | `technical` |
+|---|---|---|---|---|---|---|
+| `01c` | test | `needs_work` or `fine` | `good` | `needs_work` | `good` or `fine` | `unscored` |
+| `02a` | test | `unscored` | `unscored` | `needs_work` | `unscored` | `unscored` |
+| `03` | test | `unscored` | `needs_work` | `needs_work` | `unscored` | `unscored` |
+| `04` | test | `needs_work` or `fine` | `good` | `needs_work` | `unscored` | `unscored` |
+| `05b` | test | `unscored` | `needs_work` | `good` or `fine` | `unscored` | `unscored` |
+| `01a` | reference | `needs_work` | `unscored` | `unscored` | `unscored` | `unscored` |
+| `01b` | reference | `fine` | `needs_work` | `unscored` | `unscored` | `unscored` |
+| `02b` | reference | `unscored` | `unscored` | `good` | `unscored` | `unscored` |
+| `05a` | reference | `unscored` | `good` | `good` or `fine` | `unscored` | `unscored` |
+
+Reasons for the entries that are not a direct copy of a section 6 label:
+- `01c` and `04`, `subject_story`: the subject is 1.8 / 1.9 stops darker than its surroundings, so a model may also flag subject readability. That is accepted but not required, because the root problem is brightness (`light_exposure`).
+- `01c`, `color_tone`: white objects are strongly yellow-orange (R/B 2.31), but the author does not treat it as a defect. `needs_work` here counts as a false positive.
+- `01b`, `subject_story`: the subject is 0.7 stop darker than its ring, below the 1.5-stop threshold (section 6), so `fine`.
+- `05b` and `05a`, `light_exposure`: section 6 says exposure is fine (median L* 55.8 / 56.1, ≤ 0.03% pixels ≥ 250). Light quality (direction, hardness) was not assessed, so `good` or `fine`.
+- `02b`, `light_exposure`: `exposure_ok` (median L* 61; 0.02% ≥ 250).
+
+### 9.3 Expected problems, evidence, strengths and author intent
+
+| Photo | Expected root problem(s) | Section 6 labels merged | Expected evidence zone | Expected strengths (dimension: what) | Author intent on record |
+|---|---|---|---|---|---|
+| `01c` | `light_exposure`: subject 1.8 stops darker than its surroundings. Related: `subject_story` | `subject_low_separation` | `center` (subject centre (0.55, 0.61)) | `composition`: subject 0.05 from the vanishing-point axis | None for the shot. The author does not treat the yellow-orange cast as a defect |
+| `02a` | `light_exposure`: severe highlight clipping, clock-face detail lost | `highlight_clipped_severe`, `subject_detail_loss` | `global` (clipping covers 40.6% of pixels, sky 100%; per-zone location not mapped) | None recorded | None recorded |
+| `03` | Two problems: (a) `light_exposure`: crushed shadows, 41.4% of pixels ≤ 10; (b) `composition`: car 0.04 of the frame from the right pillar of the opening | (a) `shadow_crush_severe`; (b) `subject_at_inner_frame_edge` | (a) `global` (not mapped); (b) `center` (car centre (0.65, 0.62) is 0.017 from the x = 2/3 line and 0.047 from the y = 2/3 line, so by the 9.1 rule `middle-right`, `bottom-center` and `bottom-right` are also accepted) | `composition`: frame-within-frame (section 2) | The exposure error was **not intentional** (author-confirmed). The prompt treats lost tonal detail as a flaw even when the mood looks deliberate, so a "dark, moody, intentional" reading is a wrong answer |
+| `04` | `light_exposure`: subject 1.9 stops darker than its surroundings, right wall crushed (64% ≤ 10) | `subject_in_shade_underexposed`, `shadow_crush` | Subject: `center` (centre (0.51, 0.60)). Right wall: not mapped | `composition`: subject on the centre axis, leading lines converge near (0.5, 0.33) [EYE]. `light_exposure`: no significant clipping (0.65% ≥ 250) | None recorded |
+| `05b` | `composition`: space ahead of the subject 0.16 of the frame (0.58 in `05a`) | `limited_look_room` | `bottom-right` (subject centre (0.74, 0.77), walking right) | `light_exposure`: exposure fine (median L* 55.8; 0.03% ≥ 250) | The traffic light was placed deliberately (author-confirmed). Flagging it as a defect is a false positive |
+| `01a` | `subject_story`: no subject | `subject_missing` | `global` | None | None recorded |
+| `01b` | `composition`: subject 0.01–0.03 from the wall corner [EYE] | `subject_tangent_to_wall_line` | `middle-right` (subject centre (0.78, 0.60)) | None | None recorded |
+| `02b` | None expected | `exposure_ok` | None | `light_exposure`: no clipping (0.02% ≥ 250), p99 luma 226 | None recorded |
+| `05a` | None expected | `look_room_ok` | None | `composition`: space ahead 0.58 | None recorded |
+
+Strengths are scored for recall only: the model may list other true strengths, but it is not wrong if it misses one of these. "None recorded" means the author has not stated an intent for the shot; the author should fill these in before v0.2.
+
+### 9.4 Coverage limits
+
+- **`technical` and `color_tone` have no ground truth.** No photo carries a labelled Technical or Color defect, and sharpness, noise and focus were never measured. Under v0.1 these two dimensions can only be checked for obvious false positives; the model's labels there are `unscored`. To score them, measure (for example sharpness) or add photos with a known defect.
+- **The expected root problems are unbalanced.** Of the 6 expected root problems in the test photos, 4 are `light_exposure` and 2 are `composition` (`03b`, `05b`); `subject_story` appears only in the reference `01a`. Per-dimension precision and recall will rest on very few cases.
+- **`iso_too_high_for_light` is out of scope** (section 6): the prompt does not assume settings.
+- **Photos with one expected problem do not test ranking.** Only `03` has two expected problems, and its order is not set, so the prompt's priority ordering is not tested.
+- **Circularity** (section 6) still applies, and this mapping has not been confirmed by the author. Confirm 9.2 and 9.3 before using them to score a run.
