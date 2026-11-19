@@ -30,9 +30,9 @@ The schema has its own version, `schema_version`, independent of the project rel
 | field | type | allowed values | required | meaning |
 |---|---|---|---|---|
 | intent | `Intent` object | see "Intent" | yes | The intent the model assumes for the photo, and its confidence in that assumption. |
-| analysis_limits | list of text | free text, one reason per item | no | Reasons why parts of the analysis may be unreliable (for example "the image is too small to judge sharpness"). An empty list when there are none. |
+| analysis_limits | list of text | free text, one reason per item | yes | Reasons why parts of the analysis may be unreliable (for example "the image is too small to judge sharpness"). Always present; an empty list `[]` when there are none. |
 | dimensions | `Dimensions` object | exactly five keys, see "Dimensions" | yes | The diagnosis of the photo on five dimensions. |
-| strengths | list of `Strength` | 1–2 items | yes | What the student should keep doing. |
+| strengths | list of `Strength` | 0–2 items | yes | What the student should keep doing. May be empty. |
 | priority_problems | list of `PriorityProblem` | 0–2 items, see invariants 3 and 4 | yes | The most important problems to work on. |
 | overall_summary | text | one sentence | yes | A summary of the photo and the single most important thing to work on. |
 
@@ -93,9 +93,9 @@ Rules that involve more than one field, or that go beyond the field types. "Code
 | 1 | The `root_dimension` of a problem is rated `needs_work`, or `fine` when no dimension is `needs_work`. | Code, and stated in the prompt |
 | 2 | `related_dimensions` does not contain the `root_dimension`. | Code, and stated in the prompt |
 | 3 | `priority_problems` has at most 2 items. | Code, and stated in the prompt |
-| 4 | `priority_problems` is empty if and only if no dimension is rated `needs_work` or `fine`. A photo whose dimensions are all `good` or `not_assessable` therefore has an empty list. | Code, and stated in the prompt |
+| 4 | `priority_problems` has at least 1 item when a dimension is rated `needs_work`, and is empty when no dimension is rated `needs_work` or `fine`. When the worst rating is `fine`, it has 0–2 items. | Code, and stated in the prompt |
 | 5 | `rank` values are increasing and not duplicated. | Code, and stated in the prompt |
-| 6 | `strengths` has 1–2 items. | Code, and stated in the prompt |
+| 6 | `strengths` has at most 2 items. It may be empty. | Code, and stated in the prompt |
 | 7 | Every `evidence` list has at least 1 item, and every `description` is not empty. | Code |
 | 8 | `Critique` rejects unknown fields, so run metadata cannot appear in the model output. | Code (`extra="forbid"`) |
 | 9 | `schema_version`, `prompt_version`, `model_id` and `git_sha` are set by the pipeline, never by the model. | Code (pipeline) |
@@ -164,69 +164,74 @@ Why the metadata is kept out of the model's output:
 
 ### Valid example
 
-A street photo: a person in a grey jacket walks past a grey wall, with a patch of sunlight in the upper right. This is a `Critique`, not a `RunRecord`.
+A lake photo: a small rowing boat on a calm lake in morning light, hills on the far shore, and a shore line that slopes down toward the left. This is a `Critique`, not a `RunRecord`. The same example is used in `prompts/critique_v1.md`; when one copy changes, change the other.
 
-```json
-{
-  "intent": {
-    "summary": "You may have wanted to capture a pedestrian moment in a city street, with the patch of sunlight adding atmosphere.",
-    "confidence": "medium"
-  },
-  "analysis_limits": [],
-  "dimensions": {
-    "subject_story": {
-      "label": "needs_work",
-      "comment": "The moment has potential, but the walker does not stand out, so the viewer's eye has no clear place to land first.",
-      "confidence": "high"
-    },
-    "composition": {
-      "label": "needs_work",
-      "comment": "The low camera angle gives a good sense of space, but the walker sits low in the frame, far from the bright area and against a wall of the same tone.",
-      "confidence": "medium"
-    },
-    "light_exposure": {
-      "label": "fine",
-      "comment": "The shaft of sunlight in the upper right is attractive and clearly directional, but it does not fall on the walker.",
-      "confidence": "high"
-    },
-    "color_tone": {
-      "label": "good",
-      "comment": "The warm greys of the wall and jacket are consistent and create a calm mood, with no color cast.",
-      "confidence": "medium"
-    },
-    "technical": {
-      "label": "good",
-      "comment": "The walker is sharp, and at this resolution there is no visible motion blur or significant noise.",
-      "confidence": "medium"
-    }
-  },
-  "strengths": [
     {
-      "dimension": "composition",
-      "observation": "The low angle makes the wall taller and the street wider, which gives the frame a strong sense of space.",
-      "evidence": [
-        { "zone": "global", "description": "the sense of space created by the low angle across the whole frame" }
-      ]
-    }
-  ],
-  "priority_problems": [
-    {
-      "rank": 1,
-      "root_dimension": "composition",
-      "related_dimensions": ["light_exposure", "subject_story"],
-      "title": "The subject blends into the background and is separated from the light",
-      "observation": "The walker, in a grey jacket, stands against an equally grey wall, low in the frame and far from the shaft of sunlight in the upper right.",
-      "evidence": [
-        { "zone": "bottom-center", "description": "the walker in a grey jacket" },
-        { "zone": "top-right", "description": "the brightest patch of sunlight in the image" }
+      "intent": {
+        "summary": "You may have wanted to capture a calm, quiet morning on a lake, with a single boat as the focus.",
+        "confidence": "medium"
+      },
+      "analysis_limits": [],
+      "dimensions": {
+        "subject_story": {
+          "label": "good",
+          "comment": "A single small boat on an empty lake gives the photo a clear subject, and the eye goes to it first because it is the only man-made shape.",
+          "confidence": "high"
+        },
+        "composition": {
+          "label": "good",
+          "comment": "The boat sits left of center with open water in front of it, so it has room to move, and the far hills stay clear of it.",
+          "confidence": "medium"
+        },
+        "light_exposure": {
+          "label": "good",
+          "comment": "The soft, even morning light keeps detail in both the bright sky and the dark water, with no clipped highlights or crushed shadows.",
+          "confidence": "medium"
+        },
+        "color_tone": {
+          "label": "good",
+          "comment": "The cool blue-green palette is consistent across the water, hills and sky, which supports the calm mood.",
+          "confidence": "high"
+        },
+        "technical": {
+          "label": "needs_work",
+          "comment": "The far shore line slopes down toward the left, which is easy to see against the straight edges of the frame, although the boat itself is sharp.",
+          "confidence": "high"
+        }
+      },
+      "strengths": [
+        {
+          "dimension": "composition",
+          "observation": "The boat has open water ahead of it, which gives the scene a feeling of quiet space.",
+          "evidence": [
+            { "zone": "bottom-left", "description": "the small boat with open water in front of it" }
+          ]
+        },
+        {
+          "dimension": "color_tone",
+          "observation": "The blue-green palette is consistent from the water to the sky, so nothing distracts from the calm mood.",
+          "evidence": [
+            { "zone": "global", "description": "the cool blue-green tones across the whole frame" }
+          ]
+        }
       ],
-      "why": "The brightest area pulls the viewer's eye to the upper right, where nothing important is happening, while the walker's jacket merges with the wall and cannot hold attention.",
-      "what_to_try": "Move so the patch of sunlight is behind the walker, then wait until they step into it before pressing the shutter."
+      "priority_problems": [
+        {
+          "rank": 1,
+          "root_dimension": "technical",
+          "related_dimensions": [],
+          "title": "The horizon is tilted",
+          "observation": "The line where the far shore meets the water slopes down from the right side of the frame to the left side, while the calm water should sit flat.",
+          "evidence": [
+            { "zone": "middle-left", "description": "the far shore line, lower here" },
+            { "zone": "middle-right", "description": "the far shore line, higher here" }
+          ],
+          "why": "The eye expects a horizon to be level, so the tilt looks like a mistake and makes the calm scene feel as if it is sliding to one side. A level horizon lets the quiet mood come through.",
+          "what_to_try": "On your next lake shoot, turn on the camera's grid and line the far shore up with a horizontal grid line before pressing the shutter."
+        }
+      ],
+      "overall_summary": "A calm, well-balanced lake scene held back by a tilted horizon; next time, level the horizon before you shoot."
     }
-  ],
-  "overall_summary": "A good moment and atmosphere, but the viewer is not sure where to look; next time, prioritize getting your subject into the light."
-}
-```
 
 ### Invalid examples
 
@@ -242,7 +247,8 @@ Each case below breaks one rule. The fragment shows only the part that is wrong.
 | 6 | `priority_problems` with 3 items | At most 2 problems. | Validator |
 | 7 | No dimension is `needs_work` or `fine` (for example all five `good`) and one item in `priority_problems` | The list must be empty when no dimension is `needs_work` or `fine`, because no valid root dimension exists. | Validator |
 | 8 | A top-level `"model_id": "..."` in `Critique` | Unknown field (`extra="forbid"`). Metadata belongs to `RunRecord`. | `extra="forbid"` |
-| 9 | One dimension is `needs_work` and `"priority_problems": []` | At least one problem is required when a dimension is `needs_work` or `fine`. | Validator |
+| 9 | One dimension is `needs_work` and `"priority_problems": []` | At least one problem is required when a dimension is `needs_work`. | Validator |
+| 10 | `analysis_limits` is missing from the object | The field is required. When there are no limits it must be written as `[]`. | Required field |
 
 ## Known limitations / Backlog
 
@@ -251,12 +257,14 @@ Limits of schema v0.1.0. None of them is hidden; each one has a place where it w
 **Not covered by the prompt or the schema**
 
 - Whether `global` or `cannot_localize` may appear together with grid zones in the same `evidence` list is not specified. The schema accepts any mix.
+- When the worst rating is `fine`, whether to list a problem is the model's judgement. The schema accepts both an empty list and 1–2 problems.
 
 **Rules that exist only in the prompt**
 
 These are not machine-checked. The schema accepts a violation, and only review or later evaluation will notice it.
 
 - `comment` is 1–2 sentences.
+- `strengths` is empty only when nothing real can be praised (for example when no dimension can be assessed). The schema does not check why the list is empty.
 - `what_to_try` is one concrete action (at most two numbered steps).
 - A rule name appears at most once in `why`, and only in parentheses.
 - Advice may name a camera setting to change but must not state its current value.
