@@ -10,8 +10,9 @@ Initial version of the critique prompt.
 - Evaluates every photo on five fixed dimensions (`subject_story`, `composition`, `light_exposure`, `color_tone`, `technical`), each with a label (`good`, `fine`, `needs_work`, `not_assessable`), a comment and a confidence.
 - Infers the photographer's intent first and states it as an assumption with a confidence.
 - Gives each dimension its own include/exclude criteria and a tie-break rule, so that a problem has exactly one `root_dimension`. Brightness and lost tonal detail always belong to Light & Exposure.
-- Selects at most two priority problems, each with `observation`, `evidence`, `why` and one concrete `what_to_try`. The list is empty when no dimension is `needs_work` or `fine`.
+- Selects at most two priority problems, each with `observation`, `evidence`, `why` and one concrete `what_to_try`. At least one problem is required when a dimension is `needs_work`. When the worst rating is `fine` the list may be empty, so the model is never forced to invent a problem. It is empty when no dimension is `needs_work` or `fine`.
 - Lists 0–2 strengths. The list is empty when nothing real can be praised or no dimension can be assessed.
 - Evidence is a list of objects with `zone` (3×3 grid, `global` or `cannot_localize`) and `description`.
-- Grounding rules: describe only what is visible, never state a camera setting's current value, and use `not_assessable` or a lower confidence when unsure.
+- Grounding rules: describe only what is visible, never state a camera setting's current value or say it was wrong (advice describes the goal of the setting instead), and use `not_assessable` or a lower confidence when unsure.
 - Output is one JSON object that follows the `Critique` schema in `docs/schema.md` (schema version 0.1.0). Field order puts the diagnosis before the advice.
+- All examples in the prompt use one scene (a calm lake with a single boat), unrelated to the test photos. The example output has one clear root problem (tilted horizon, `technical`); the other examples explain a rule using the same scene. The example output is not in a code fence, and the prompt tells the model not to use one.
