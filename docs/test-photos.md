@@ -2,16 +2,17 @@
 
 - Written: 2026-11-16 (labels assigned from EXIF and measurements on the images; the primary labels were confirmed by the author on the same day)
 - Photo author: Ngoc Manh, shot on a Canon EOS RP with an RF24-105mm F4-7.1 IS STM; full usage rights
-- Location: `data/test-photos.md` (text). The photos are in `data/raw/`, outside git.
+- Location: `data/test-photos.md` (text). The model input is the PNG set in `data/processed_raw/png/`; the JPEG originals are in `data/raw/`. Both are outside git.
 - Revised: 2026-11-19. Added section 9 (expected output per dimension, aligned to the `prompts/critique_v1.md` prompt) and edited the `02a` ISO row in section 6. Sections 2–5 are unchanged. Section 9 was derived from sections 5–6 and is **not yet confirmed by the author**.
+- Updated: 2026-11-19 (second edit). The set used from now on is the processed PNG set (`data/processed_raw/png/`, made by `data/processed_raw/preprocess.py`), not the JPEG originals. Sections 3, 7 and 8 were rewritten for this, plus small edits in the header, section 1, the section 5 conventions and the section 6 settings note. The labels and measurements themselves did not change, and one wrong note in 5.1 (`02_b`, which channel is near-clipped) was corrected.
 - No model output was seen when these labels were written, or when section 9 was written.
 - Sections 1–8 only describe the photo set. Section 9 is tied to one prompt version (`prompts/critique_v1.md`, identified as `critique_v1` in run output); if the prompt's rules change, section 9 must be re-checked. How the set is used and judged may change later.
 
 ## 1. Scope and reproducibility
 
-- The photos belong to the author and live outside the repo, so anyone cloning the repo cannot re-run this exact set. To verify you have the same photos, compare the sha256 values in section 3.
-- `data/raw/` holds 9 files. 5 are test inputs (see the "Role" column in section 3); the other 4 are same-scene references. `example_01b` was originally a test photo and has been moved to the references so the set has exactly 5 test photos, as the DoD requires. 01b was chosen because its label rests on an eyeballed estimate [EYE], which is weaker than the measured labels. Its label is still in section 6.
-- Evidence tags: **[EXIF]** read from metadata, **[MEASURED]** computed by code on the correctly rotated image (full 1620×1080 px), **[EYE]** estimated by eye on a 10% grid (error about ±0.02 of the frame).
+- The photos belong to the author and live outside the repo, so anyone cloning the repo cannot re-run this exact set. To verify you have the same photos, compare the sha256 values in section 3 (PNG hash for the model input, source JPEG hash for the originals).
+- `data/raw/` holds the 9 original JPEGs; `data/processed_raw/png/` holds the 9 PNGs derived from them, one per original, and these PNGs are the images a model sees. 5 are test inputs (see the "Role" column in section 3); the other 4 are same-scene references. `example_01b` was originally a test photo and has been moved to the references so the set has exactly 5 test photos, as the DoD requires. 01b was chosen because its label rests on an eyeballed estimate [EYE], which is weaker than the measured labels. Its label is still in section 6.
+- Evidence tags: **[EXIF]** read from the camera metadata of the JPEG originals (the PNGs carry no EXIF; the values are kept in `data/processed_raw/manifest.json`), **[MEASURED]** computed by code on the correctly rotated image at full resolution (the PNGs hold exactly the same pixels, so the numbers apply to them too), **[EYE]** estimated by eye on a 10% grid (error about ±0.02 of the frame).
 - Label convention: a **primary label** is a clear, measurable or author-confirmed finding. Subjective or unclear judgements were dropped. **Other measured observations** (section 6) are only there to see whether a model notices them unprompted; they are not counted as expected defects.
 - Defect labels (sections 2 and 6) are not the prompt's output. The prompt reports five dimensions (`subject_story`, `composition`, `light_exposure`, `color_tone`, `technical`) with a label for each. Section 9 maps the defect labels to that output; use section 9, not section 6, when scoring a model run.
 
@@ -25,21 +26,21 @@
 | `example_04` | Staircase between two walls, person walking down | Lighting group: good composition and leading lines, subject underlit | Subject sunk in shade and underexposed: 1.9 stops darker than surroundings. Right wall: 64% of pixels ≤ 10 | 2026-11-16 |
 | `example_05b` | Street corner, woman walking to the right | Look-room group | Look room ahead 0.16 of frame (photo `05a`: 0.58) | 2026-11-16 |
 
-## 3. Files in `data/raw/`
+## 3. Files in `data/processed_raw/png/`
 
-All are JPEG, RGB, no ICC profile, stored at 1620×1080 px. Photos with Orientation = 8 display at 1080×1620 (portrait) once rotated. File sizes range from 222 KB to 449 KB, about 2.8 MB in total.
+All are 8-bit RGB PNG, with no EXIF, no ICC profile and no other metadata, already rotated upright. 8 photos are 1080×1620 (portrait); `Example_03` is 1620×1080 (landscape). File sizes range from 921 KB to 2091 KB, about 12.4 MB in total. The JPEG originals (`data/raw/`, 1620×1080 stored, 222–449 KB, about 2.8 MB in total) are the source and are not model input. Shooting settings and time are read from the originals' EXIF [EXIF] and kept in `data/processed_raw/manifest.json`.
 
-| File | Role | Date, time shot [EXIF] | KB | Orient. | Shutter, aperture, ISO, focal length [EXIF] | EV100 from settings | sha256 (first 12 chars) |
-|---|---|---|---|---|---|---|---|
-| Example_01_a.JPG | reference (no subject) | 2026-10-30 16:02:06 | 222 | 8 | 1/250, f/5.6, ISO 1250, 40mm | 9.29 | 18dfc099a558 |
-| Example_01_b.JPG | reference (subject-position counterpart) | 2026-10-30 16:02:13 | 223 | 8 | 1/250, f/5.6, ISO 1250, 40mm | 9.29 | 15a447582487 |
-| Example_01_c.JPG | **test** | 2026-10-30 16:02:14 | 224 | 8 | 1/250, f/5.6, ISO 1250, 40mm | 9.29 | 434a401a20be |
-| Example_02_a.JPG | **test** | 2026-10-30 15:42:47 | 358 | 8 | 1/250, f/8, ISO 1000, 70mm | 10.64 | fda937e2facd |
-| Example_02_b.JPG | reference (fixed version of 02a) | 2026-10-30 15:43:30 | 449 | 8 | 1/250, f/8, ISO 125, 70mm | 13.64 | 1204780924c6 |
-| Example_03.JPG | **test** | 2026-11-06 07:10:50 | 250 | 1 | 1/200, f/7.1, ISO 400, 60mm | 11.30 | 4d9aaa6015c9 |
-| Example_04.JPG | **test** | 2026-11-11 17:49:49 | 319 | 8 | 1/250, f/7.1, ISO 1000, 105mm | 10.30 | b5d76377eaba |
-| Example_05_a.JPG | reference (counterpart of 05b) | 2026-11-11 17:45:22 | 427 | 8 | 1/250, f/9, ISO 160, 105mm | 13.63 | 0bd90f714a69 |
-| Example_05_b.JPG | **test** | 2026-11-11 17:45:35 | 420 | 8 | 1/250, f/9, ISO 160, 105mm | 13.63 | 4ba0a181a6c2 |
+| File | Role | Date, time shot [EXIF] | Size (px) | KB | Shutter, aperture, ISO, focal length [EXIF] | EV100 from settings | PNG sha256 (first 12) | Source JPEG sha256 (first 12) |
+|---|---|---|---|---|---|---|---|---|
+| Example_01_a.png | reference (no subject) | 2026-10-30 16:02:06 | 1080×1620 | 921 | 1/250, f/5.6, ISO 1250, 40mm | 9.29 | f3c0dec31c76 | 18dfc099a558 |
+| Example_01_b.png | reference (subject-position counterpart) | 2026-10-30 16:02:13 | 1080×1620 | 932 | 1/250, f/5.6, ISO 1250, 40mm | 9.29 | 4cde27295275 | 15a447582487 |
+| Example_01_c.png | **test** | 2026-10-30 16:02:14 | 1080×1620 | 936 | 1/250, f/5.6, ISO 1250, 40mm | 9.29 | 670995dd16be | 434a401a20be |
+| Example_02_a.png | **test** | 2026-10-30 15:42:47 | 1080×1620 | 1648 | 1/250, f/8, ISO 1000, 70mm | 10.64 | f1a170dc3dc9 | fda937e2facd |
+| Example_02_b.png | reference (fixed version of 02a) | 2026-10-30 15:43:30 | 1080×1620 | 2091 | 1/250, f/8, ISO 125, 70mm | 13.64 | 433fcfc89c35 | 1204780924c6 |
+| Example_03.png | **test** | 2026-11-06 07:10:50 | 1620×1080 | 1094 | 1/200, f/7.1, ISO 400, 60mm | 11.30 | a23b8184b5f9 | 4d9aaa6015c9 |
+| Example_04.png | **test** | 2026-11-11 17:49:49 | 1080×1620 | 1410 | 1/250, f/7.1, ISO 1000, 105mm | 10.30 | 473799fb1b24 | b5d76377eaba |
+| Example_05_a.png | reference (counterpart of 05b) | 2026-11-11 17:45:22 | 1080×1620 | 1876 | 1/250, f/9, ISO 160, 105mm | 13.63 | 32b9cb6eb894 | 0bd90f714a69 |
+| Example_05_b.png | **test** | 2026-11-11 17:45:35 | 1080×1620 | 1836 | 1/250, f/9, ISO 160, 105mm | 13.63 | 1abdf6d12ec9 | 4ba0a181a6c2 |
 
 EV100 = log2(f²/t) − log2(ISO/100), i.e. normalised to ISO 100. For a sunny scene, `02b` and `05` give EV100 ≈ 13.6. `02a` is 3 stops lower: with the same 1/250 and f/8 the light reaching the sensor is identical, and ISO 1000 only amplifies the signal, so the image is 3 stops brighter than `02b`.
 
@@ -56,7 +57,7 @@ Pairs and triples both count, as long as the scene is the same. **The a/b pairs 
 
 ## 5. Measurements
 
-Conventions: images rotated per EXIF, 8-bit sRGB. Luma uses Rec.709 weights on gamma-encoded values. L* is CIELAB with D65. "Stop" is log2 of the linear luminance ratio. Subjects are measured inside an eyeballed bounding box and compared with the ring around it (box expanded by 50%).
+Conventions: images upright (rotated per EXIF; the PNGs are already upright and hold the same pixels), 8-bit sRGB. Luma uses Rec.709 weights on gamma-encoded values. L* is CIELAB with D65. "Stop" is log2 of the linear luminance ratio. Subjects are measured inside an eyeballed bounding box and compared with the ring around it (box expanded by 50%).
 
 ### 5.1 Brightness and tone
 
@@ -66,7 +67,7 @@ Conventions: images rotated per EXIF, 8-bit sRGB. Luma uses Rec.709 weights on g
 | 01_b | 61.1 | 26.1 | 106 | 0.01 | 3.1 | White tile luma 75 |
 | 01_c | 62.0 | 26.3 | 106 | 0.01 | 2.9 | White tile luma 77 |
 | 02_a | 223.9 | 93.7 | 255 | **40.59** | 0.0 | Sky 100% ≥ 250. Tower 42.2% ≥ 250. Clock face: luma 5th–95th percentile 140–255, std 37.5 |
-| 02_b | 140.3 | 61.0 | 226 | 0.02 | 0.3 | Clock face: luma 5th–95th percentile 56–225, std 51.6. 5.0% of pixels have at least one channel ≥ 250 (red channel on the sandstone) |
+| 02_b | 140.3 | 61.0 | 226 | 0.02 | 0.3 | Clock face: luma 5th–95th percentile 56–225, std 51.6. 5.0% of pixels have at least one channel ≥ 250 (blue channel on the blue sky: B ≥ 250 on 4.97% of pixels, R 0.04%, G 0.02%) |
 | 03 | 23.9 | 3.9 | 162 | 0.02 | **41.4** | 21.0% ≤ 5. The bright opening is 5.0 stops above the dark pillar |
 | 04 | 47.1 | 9.5 | 246 | 0.65 | **28.9** | Right wall: median luma 8, 64% ≤ 10. Sunlit left wall: 87. Sky/glass at top: 184. Sky is 6.3 stops above the right wall; sunlit wall is 4.5 stops above it |
 | 05_a | 106.6 | 56.1 | 197 | 0.01 | 8.8 | |
@@ -133,27 +134,32 @@ Labels that need the shooting settings (EXIF) and cannot be inferred from the pi
 
 | Photo | Label | Basis | Condition for scoring |
 |---|---|---|---|
-| `02a` | `iso_too_high_for_light` | ISO 1000 (EV100 10.64) vs ISO 125 in `02b` (EV100 13.64), same 1/250, f/8: the image is 3 stops brighter because of the higher ISO [EXIF] | **Out of scope for v0.1, not scored.** The `critique_v1` prompt tells the model not to assume camera settings or EXIF, and v0.1 sends only the image, so this label cannot be checked from the output. Revisit only if a later version passes the shooting settings to the model; passing settings is not implemented yet (Backlog) |
+| `02a` | `iso_too_high_for_light` | ISO 1000 (EV100 10.64) vs ISO 125 in `02b` (EV100 13.64), same 1/250, f/8: the image is 3 stops brighter because of the higher ISO [EXIF] | **Out of scope for v0.1, not scored.** The `critique_v1` prompt tells the model not to assume camera settings or EXIF, and v0.1 sends only the image, so this label cannot be checked from the output. Revisit only if a later version passes the shooting settings to the model; passing settings is not implemented yet (Backlog). The settings are available in `data/processed_raw/manifest.json` |
 
-## 7. Preprocessing required before use
+## 7. Preprocessing already applied, and what it means for use
 
-1. **Apply the EXIF Orientation.** 8 of 9 photos have Orientation = 8 (only `Example_03` is 1). Without rotation the image appears turned 90°, and every composition judgement (thirds, facing direction, look room) is made on the wrong orientation. Use `ImageOps.exif_transpose`. All coordinates and measurements in this file were taken on rotated images. Rotate in memory, on decoded pixels; do not save back to JPEG (see items 4 and 8). The API documentation also warns that the model may make mistakes on rotated images.
-2. **Extract the shooting settings before stripping EXIF.** Pull ExposureTime, FNumber, ISO and FocalLength (and DateTimeOriginal if needed) into text or `annotations.csv`. A model should not have to guess settings from pixels.
-3. **Strip private metadata before sending images outside or publishing them.** All 9 photos carry the camera body serial, the lens serial and an embedded thumbnail. A GPS block is present in EXIF but contains only GPSVersionID, with no coordinates (checked). Order: rotate → extract settings → strip EXIF.
-4. **Do not adjust tone, re-compress as JPEG, or resize before measuring.** Auto-contrast, gamma and a second JPEG compression change the measurements (clipping, lost shadow detail, colour). Measure directly on the rotated pixels. When sending to an API, encode the rotated pixels as **PNG** (lossless on the decoded pixels); do not save back to JPEG. The sha256 values in section 3 apply only to the original JPEG files, because a PNG has a different hash.
-5. **Do not convert the colour space.** The photos have no ICC profile; treat them as sRGB and leave them as they are.
-6. **Verify integrity with sha256 (section 3).** Re-exporting or re-saving a JPEG changes the hash. If a photo is replaced, update the table and the date.
-7. **Photos contain strangers** (`01b`, `01c`, `03`, `04`, `05a`, `05b`). No one has been asked for permission, so the set is not published.
-8. **API image limits** (checked against the Claude API documentation on 2026-11-16):
-   - Up to 10 MB per image (base64) on the Claude API, 5 MB on Amazon Bedrock. Up to 8000×8000 px. Formats: JPEG, PNG, GIF, WebP. Up to 128 MB per request on the Claude API.
-   - The 9 photos as PNG after rotation are 1.05–2.21 MB (Pillow 12.3.0, default compression). Base64 adds about 33%, at most about 2.95 MB, still under Bedrock's 5 MB limit.
+`data/processed_raw/preprocess.py` (Pillow only) turns each JPEG original in `data/raw/` into a PNG in `data/processed_raw/png/` and writes `data/processed_raw/manifest.json`. Order of the steps: read → apply EXIF Orientation → extract settings → save PNG without metadata → reopen the PNG and check it is pixel-identical to the in-memory rotation (the check passed for all 9).
+
+Already done, so nothing to repeat:
+- **EXIF Orientation is applied.** 8 of the 9 originals had Orientation = 8 (only `Example_03` is 1). The PNGs are upright and carry no Orientation tag, so no consumer (code or API) needs to handle rotation, and composition judgements (thirds, facing direction, look room) are made on the correct orientation. All coordinates and measurements in this file were taken on rotated images.
+- **Shooting settings are extracted** (ExposureTime, FNumber, ISO, FocalLength, DateTimeOriginal, camera and lens name, EV100) into `manifest.json`. A model should not have to guess settings from pixels.
+- **Private metadata is stripped.** The originals carry the camera body serial, the lens serial and an embedded thumbnail. The GPS block holds only GPSVersionID, with no coordinates (checked). The PNGs contain none of this, and `manifest.json` does not store serials. The originals must still not be published.
+- **Lossless encoding.** PNG stores the decoded pixels exactly. No tone adjustment, no resize, no colour-space conversion, no second lossy compression. The headline numbers of section 5.1 (mean luma, % pixels ≥ 250, % pixels ≤ 10) were recomputed on the PNGs and match for all 9 photos.
+
+Rules that still apply when using the set:
+1. **Use the PNGs, not the JPEG originals, as model input.** The originals need the rotation step and carry metadata.
+2. **Do not adjust tone, re-compress as JPEG, or resize before measuring.** Auto-contrast, gamma and a second JPEG compression change the measurements (clipping, lost shadow detail, colour). Fallback only if the size limit is exceeded: JPEG at quality 95, 4:4:4 (about 0.33–0.66 MB). That is a second compression; on 4 photos the headline metrics moved by at most 0.03 percentage points.
+3. **Do not convert the colour space.** The originals have no ICC profile; treat the PNGs as sRGB and leave them as they are.
+4. **Verify integrity with sha256 (section 3).** The PNG hash identifies the model input and the source hash identifies the original. A PNG hash differs from its source hash by design. The PNG hashes in section 3 are those of the files produced on the author's machine (Pillow 11.1.0). Pillow/zlib version changes the PNG bytes without changing the pixels: a rebuild with Pillow 12.3.0 gave different hashes and sizes for the same pixels. So compare the source JPEG hash first, and a PNG only by pixels or by the same Pillow version; `manifest.json` also records `pixels_identical_to_in_memory_rotation`. If an original is replaced, re-run `preprocess.py` and update section 3 and the date.
+5. **Photos contain strangers** (`01b`, `01c`, `03`, `04`, `05a`, `05b`). No one has been asked for permission, so the set is not published.
+6. **API image limits** (checked against the Claude API documentation on 2026-11-16):
+   - Up to 10 MB per image (base64) on the Claude API, 5 MB on Amazon Bedrock. Up to 8000×8000 px. Formats: JPEG, PNG, GIF, WebP.
+   - The 9 PNGs are about 0.9–2.1 MB each. Base64 adds about 33%, so at most about 2.9 MB, still under Bedrock's 5 MB limit.
    - Long edge 1620 px: models on the standard tier downscale to at most 1568 px (about 3% smaller). The high-resolution tier (for example Sonnet 5, Opus 4.7/4.8, Fable 5, Mythos 5) allows up to 2576 px and does not downscale. The measurements use normalised 0–1 coordinates, so they do not change with the downscale.
-   - Fallback: JPEG at quality 95, 4:4:4 (about 0.33–0.66 MB), but that is a second compression; use it only if the size limit is exceeded.
-   - Lossless JPEG rotation (jpegtran) was not tried. The photos are 4:2:2 and 1620 is not a multiple of 16, so edges may be trimmed or the transform refused.
 
 ## 8. Source of the measurements
 
-The measurements in section 5 were computed on 2026-11-16 with Python (Pillow 12.3.0, NumPy 2.5.3), run by Claude (an AI assistant) in a working session at the author's request. The script is not saved in the repo, so reproducing the numbers means re-implementing them from the conventions at the top of section 5. Subject bounding boxes are eyeballed estimates, not the result of automatic detection. If a photo is replaced, re-measure.
+The measurements in section 5 were computed on 2026-11-16 with Python (Pillow 12.3.0, NumPy 2.5.3), run by Claude (an AI assistant) in a working session at the author's request. The measurement script is not saved in the repo, so reproducing the numbers means re-implementing them from the conventions at the top of section 5. They were computed on the rotated decode of the JPEG originals; on 2026-11-19 the headline numbers of 5.1 (mean luma, % ≥ 250, % ≤ 10) were recomputed on a rebuild of the PNGs and matched for all 9 photos; the author's own PNGs were checked pixel-identical to the in-memory rotation by `preprocess.py`. The preprocessing script is a separate file, `data/processed_raw/preprocess.py` (section 7). Subject bounding boxes are eyeballed estimates, not the result of automatic detection. If a photo is replaced, re-measure.
 
 Section 9 was written on 2026-11-19 by Claude at the author's request. It adds no new measurements: it re-expresses sections 5 and 6 in the prompt's output terms. Every entry that is not copied from those sections is a mapping decision and is marked as unconfirmed.
 

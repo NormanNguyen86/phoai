@@ -32,6 +32,7 @@ The schema has its own version, `schema_version`, independent of the project rel
 | intent | `Intent` object | see "Intent" | yes | The intent the model assumes for the photo, and its confidence in that assumption. |
 | analysis_limits | list of text | free text, one reason per item | yes | Reasons why parts of the analysis may be unreliable (for example "the image is too small to judge sharpness"). Always present; an empty list `[]` when there are none. |
 | dimensions | `Dimensions` object | exactly five keys, see "Dimensions" | yes | The diagnosis of the photo on five dimensions. |
+| strengths | list of `Strength` | 0–2 items | yes | What the student should keep doing. May be empty. |
 | priority_problems | list of `PriorityProblem` | 0–2 items, see invariants 3 and 4 | yes | The most important problems to work on. |
 | strengths | list of `Strength` | 0–2 items | yes | What the student should keep doing. May be empty. |
 | overall_summary | text | one sentence | yes | A summary of the photo and the single most important thing to work on. |
@@ -164,7 +165,7 @@ Why the metadata is kept out of the model's output:
 
 ### Valid example
 
-A lake photo: a small rowing boat on a calm lake in morning light, hills on the far shore, and a shore line that slopes down toward the left. This is a `Critique`, not a `RunRecord`. The same example is used in `prompts/critique_v1.md`; when one copy changes, change the other. It is shown as an indented block instead of a fenced one, to match the prompt, which tells the model not to use code fences.
+A lake photo: a small rowing boat on a calm lake in morning light, hills on the far shore, and a shore line that slopes down toward the left. This is a `Critique`, not a `RunRecord`. The same example is used in `prompts/critique_v1.md`; when one copy changes, change the other.
 
     {
       "intent": {
@@ -180,7 +181,7 @@ A lake photo: a small rowing boat on a calm lake in morning light, hills on the 
         },
         "composition": {
           "label": "good",
-          "comment": "The boat sits in the lower left of the frame with open water stretching ahead of it, so it has room to move, and the far hills stay clear of it.",
+          "comment": "The boat sits left of center with open water in front of it, so it has room to move, and the far hills stay clear of it.",
           "confidence": "medium"
         },
         "light_exposure": {
@@ -199,21 +200,6 @@ A lake photo: a small rowing boat on a calm lake in morning light, hills on the 
           "confidence": "high"
         }
       },
-      "priority_problems": [
-        {
-          "rank": 1,
-          "root_dimension": "technical",
-          "related_dimensions": [],
-          "title": "The horizon is tilted",
-          "observation": "The line where the far shore meets the water slopes down from the right side of the frame to the left side, while the calm water should sit flat.",
-          "evidence": [
-            { "zone": "middle-left", "description": "the far shore line, lower here" },
-            { "zone": "middle-right", "description": "the far shore line, higher here" }
-          ],
-          "why": "The eye expects a horizon to be level, so the tilt looks like a mistake and makes the calm scene feel as if it is sliding to one side. A level horizon lets the quiet mood come through.",
-          "what_to_try": "On your next lake shoot, turn on the camera's grid and line the far shore up with a horizontal grid line before pressing the shutter."
-        }
-      ],
       "strengths": [
         {
           "dimension": "composition",
@@ -228,6 +214,21 @@ A lake photo: a small rowing boat on a calm lake in morning light, hills on the 
           "evidence": [
             { "zone": "global", "description": "the cool blue-green tones across the whole frame" }
           ]
+        }
+      ],
+      "priority_problems": [
+        {
+          "rank": 1,
+          "root_dimension": "technical",
+          "related_dimensions": [],
+          "title": "The horizon is tilted",
+          "observation": "The line where the far shore meets the water slopes down from the right side of the frame to the left side, while the calm water should sit flat.",
+          "evidence": [
+            { "zone": "middle-left", "description": "the far shore line, lower here" },
+            { "zone": "middle-right", "description": "the far shore line, higher here" }
+          ],
+          "why": "The eye expects a horizon to be level, so the tilt looks like a mistake and makes the calm scene feel as if it is sliding to one side. A level horizon lets the quiet mood come through.",
+          "what_to_try": "On your next lake shoot, turn on the camera's grid and line the far shore up with a horizontal grid line before pressing the shutter."
         }
       ],
       "overall_summary": "A calm, well-balanced lake scene held back by a tilted horizon; next time, level the horizon before you shoot."

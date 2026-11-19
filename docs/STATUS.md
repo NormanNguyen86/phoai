@@ -19,7 +19,7 @@ _Last updated: 2026-11-19 · Overwritten at each status check; history lives in 
 ⬜ not started · 🟨 in progress · ✅ done
 
 ## Next tasks (max 3)
-1. Get an API key and credit; test one Orientation = 8 photo on the API; decide the image preprocessing (ADR 0004).
+1. Get an API key and credit; run one test photo through the API and log `usage.output_tokens`; record the image-input decision (upright PNG made offline, no rotation in the pipeline) in ADR 0004.
 2. `schema.py` + `tests/test_schema.py` matching `docs/schema.md`; ADR 0003 (pydantic).
 3. `critique.py`: call the model, strip a whole-output code fence, parse, validate, retry (plain retry, no error feedback); `max_tokens` is a separate error; mocked tests; ADR 0004.
 
@@ -27,19 +27,19 @@ _Last updated: 2026-11-19 · Overwritten at each status check; history lives in 
 | Date | Milestone |
 |---|---|
 | 2026-11-19 | Schema doc, prompt v1 + changelog merged; ADR 0003 drafted |
-| 2026-11-20 | Orientation test; `schema.py` + schema tests pass; ADR 0003 |
+| 2026-11-20 | API key and credit ready; `schema.py` + schema tests pass; ADR 0003 |
 | 2026-11-21 | `critique.py` + mocked tests; ADR 0004; `pipeline.py` writes `runs/<run_id>/`; 5 photos run; README run section |
 | 2026-11-22 | Release checklist passed; `v0.1.0` tagged |
 
 ## Blockers / risks
 - Three working days left for schema, critique, pipeline, 5-photo run, README and two ADRs. If `critique.py` is not done by the evening of 2026-11-21, decide: move the tag (write the reason in the devlog) or release with DoD 1 not met and say so. Never cut tests or ADRs.
 - Need an Anthropic API key and credit (was due 2026-11-18).
-- 8 of 9 photos have EXIF Orientation = 8; sending raw bytes may make the model judge composition on a rotated image. Verify first.
 - `max_tokens: 2000` may be tight for 2 problems and 2 strengths; log `usage.output_tokens` on the first run.
 
 ## Backlog (out of scope for this version)
 - Caching, cost limits, eval harness (v0.2)
 - RAW image support (convert before sending to the API)
+- Auto-orient arbitrary uploads in the pipeline (`ImageOps.exif_transpose`) and move `preprocess.py` into the repo so the test set can be rebuilt (v0.2); in v0.1 the input is an upright PNG made offline
 - Validate image content (not only extension), e.g. with Pillow
 - Pytest `slow` marker (add with the first e2e test)
 - Pass shooting settings (ISO, shutter, aperture) to the model; needed to score the `iso_too_high_for_light` label of `02a`
