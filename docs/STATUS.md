@@ -46,3 +46,4 @@ _Last updated: 2026-11-16 · Overwritten at each status check; history lives in 
 - Pass shooting settings (ISO, shutter, aperture) to the model; needed to score the `iso_too_high_for_light` label of `02a`
 - Put the photo measurement script in the repo so the numbers in `docs/test-photos.md` can be regenerated (v0.2)
 - Use the a/b photo pairs as a comparison set with known answers (v0.2)
+- Eval check: flag `what_to_try` text that states a camera setting's current value or says it was wrong (phrases like "your ISO is …", "your shutter speed is too slow") (v0.2)
